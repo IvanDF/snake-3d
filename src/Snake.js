@@ -2,6 +2,7 @@ import { Mesh, MeshNormalMaterial, Vector2, Vector3 } from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry";
 import LinkedList from "./LinkedList";
 import ListNode from "./ListNode";
+import Entity from "./Entity";
 
 const NODE_GEOMETRY = new RoundedBoxGeometry(0.9, 0.9, 0.9, 5, 0.1);
 const NODE_MATERIAL = new MeshNormalMaterial();
@@ -13,20 +14,23 @@ const RIGHT = new Vector3(1, 0, 0);
 
 export default class Snake {
   direction = RIGHT;
+  indexes = [];
 
   constructor({ scene, resolution = new Vector2(10, 10) }) {
     // Snake head
     this.scene = scene;
     this.resolution = resolution;
-    const head = new ListNode(new SnakeNode());
+    const head = new ListNode(new SnakeNode(resolution));
     head.data.mesh.position.x = resolution.x / 2;
     head.data.mesh.position.z = resolution.y / 2;
 
     this.body = new LinkedList(head);
 
+    this.indexes.push(head.data.getIndexByCoord());
     // Creating initial body
     for (let idx = 0; idx < 3; idx++) {
       this.addTailNode();
+      this.indexes.push(this.end.data.getIndexByCoord());
     }
 
     scene.add(head.data.mesh);
@@ -96,7 +100,7 @@ export default class Snake {
   }
 
   addTailNode() {
-    const node = new ListNode(new SnakeNode());
+    const node = new ListNode(new SnakeNode(this.resolution));
 
     const position = this.end.data.mesh.position.clone();
     position.sub(this.direction);
@@ -107,8 +111,9 @@ export default class Snake {
   }
 }
 
-class SnakeNode {
-  constructor() {
-    this.mesh = new Mesh(NODE_GEOMETRY, NODE_MATERIAL);
+class SnakeNode extends Entity {
+  constructor(resolution) {
+    const mesh = new Mesh(NODE_GEOMETRY, NODE_MATERIAL);
+    super(mesh, resolution);
   }
 }

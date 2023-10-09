@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 import * as dat from "lil-gui";
 import Snake from "./src/Snake";
+import Candy from "./src/candy";
 
 /**
  * Debug
@@ -42,7 +43,7 @@ const camera = new THREE.PerspectiveCamera(
   sizes.width / sizes.height,
   0.1
 );
-camera.position.set(resolution.x / 2 + 2, 6, resolution.y / 2 + 2);
+camera.position.set(resolution.x / 2 + 4, 8, resolution.y / 2 + 4);
 camera.lookAt(new THREE.Vector3(0, 2.5, 0));
 
 /**
@@ -94,12 +95,12 @@ scene.add(plane);
 const snake = new Snake({ scene, resolution });
 console.log("🔎 [snake] =>", snake);
 
-window.addEventListener("click", () => {
-  !isRunning ? startGame() : stopGame();
-});
-
 window.addEventListener("keyup", (e) => {
   const keyCode = e.code;
+
+  if (keyCode === "Space") {
+    !isRunning ? startGame() : stopGame();
+  }
 
   snake.setDirection(keyCode);
 });
@@ -120,6 +121,32 @@ const stopGame = () => {
 };
 
 const resetGame = () => {};
+
+const candies = [];
+
+const addCandy = () => {
+  const candy = new Candy(resolution);
+  let index;
+
+  do {
+    index = Math.floor(Math.random() * resolution.x * resolution.y);
+  } while (snake.indexes.includes(index));
+
+  candy.mesh.position.x = index % resolution.x;
+  candy.mesh.position.z = Math.floor(index / resolution.x);
+
+  candies.push(candy);
+
+  console.log(
+    "🔎 [candy.getIndexByCoord()] =>",
+    index,
+    candy.getIndexByCoord()
+  );
+
+  scene.add(candy.mesh);
+};
+
+addCandy();
 
 /**
  * frame loop
