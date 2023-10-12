@@ -9,7 +9,7 @@ export default class Entity {
   }
 
   getIndexByCoord() {
-    const { x, y } = this.resolution;
+    const { x } = this.resolution;
     return this.position.z * x + this.position.x;
   }
 }

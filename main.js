@@ -1,9 +1,9 @@
-import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
-import * as dat from "lil-gui";
+import Candy from "./src/Candy";
+import Rock from "./src/Rock";
 import Snake from "./src/Snake";
-import Candy from "./src/candy";
+import "./style.css";
 
 /**
  * Debug
@@ -95,6 +95,28 @@ scene.add(plane);
 const snake = new Snake({ scene, resolution });
 console.log("🔎 [snake] =>", snake);
 
+snake.addEventListener("updated", () => {
+  // Check if snake eat itself
+  if (snake.checkSelfCollision() || snake.checkEntitiesCollision(entities)) {
+    snake.die();
+    resetGame();
+  }
+
+  // Check if snake eats a candy
+  const headIndex = snake.indexes.at(-1);
+  const candyIdx = candies.findIndex(
+    (candy) => candy.getIndexByCoord() === headIndex
+  );
+
+  if (candyIdx >= 0) {
+    const candy = candies[candyIdx];
+    scene.remove(candies[candyIdx].mesh);
+    candies.splice(candyIdx, 1);
+    snake.body.head.data.candy = candy;
+    addCandy();
+  }
+});
+
 window.addEventListener("keyup", (e) => {
   const keyCode = e.code;
 
@@ -120,33 +142,68 @@ const stopGame = () => {
   isRunning = null;
 };
 
-const resetGame = () => {};
+const resetGame = () => {
+  stopGame();
+
+  let candy = candies.pop();
+
+  while (candy) {
+    scene.remove(candy.mesh);
+    candy = candies.pop();
+  }
+
+  addCandy();
+};
 
 const candies = [];
+const entities = [];
 
 const addCandy = () => {
   const candy = new Candy(resolution);
-  let index;
-
-  do {
-    index = Math.floor(Math.random() * resolution.x * resolution.y);
-  } while (snake.indexes.includes(index));
+  let index = getFreeIndex();
 
   candy.mesh.position.x = index % resolution.x;
   candy.mesh.position.z = Math.floor(index / resolution.x);
 
   candies.push(candy);
 
-  console.log(
-    "🔎 [candy.getIndexByCoord()] =>",
-    index,
-    candy.getIndexByCoord()
-  );
-
   scene.add(candy.mesh);
 };
 
 addCandy();
+
+function getFreeIndex() {
+  let index;
+  let candyIdxs = candies.map((candy) => candy.getIndexByCoord());
+  let entityIdxs = entities.map((entity) => entity.getIndexByCoord());
+
+  do {
+    index = Math.floor(Math.random() * resolution.x * resolution.y);
+  } while (
+    snake.indexes.includes(index) ||
+    candyIdxs.includes(index) ||
+    entityIdxs.includes(index)
+  );
+
+  return index;
+}
+
+const addEntity = () => {
+  const entity = new Rock(resolution);
+
+  let index = getFreeIndex();
+
+  entity.mesh.position.x = index % resolution.x;
+  entity.mesh.position.z = Math.floor(index / resolution.x);
+
+  entities.push(entity);
+
+  scene.add(entity.mesh);
+};
+
+for (let idx = 0; idx < 5; idx++) {
+  addEntity();
+}
 
 /**
  * frame loop
